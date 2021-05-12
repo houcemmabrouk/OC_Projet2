@@ -29,7 +29,7 @@ def scraper(level, HTMLtag, soup):
 def generate_category_urls(homepage_url):
     homepageResponse = requests.get(homepage_url)
     homepage_soup = BeautifulSoup(homepageResponse.text, "html.parser")
-    categorySoup = homepage_soup.find("ul", class_="nav nav-list").find("li").find("ul").find_all("li")
+    categorySoup = homepage_soup.find("aside").find("div").findNext("div").find("ul").find("li").find("ul").find_all("li")
 
     category_urls = []
     for souptemp in categorySoup:
