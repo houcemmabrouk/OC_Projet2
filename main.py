@@ -4,7 +4,7 @@ import csv
 import time
 import os.path
 
-# 1A-VariablesInitialization
+# Variables Initialization
 productCount = 0
 urls = []
 productInfo = {"internal_id": None, "product_page_url": None, "universal_product_code": None,
@@ -29,7 +29,7 @@ def scraper(level, html_tag, soup):
 def generate_category_urls(homepage_url):
     homepageResponse = requests.get(homepage_url)
     homepage_soup = BeautifulSoup(homepageResponse.text, "html.parser")
-    categorySoup = homepage_soup.find("aside").find("div").findNext("div").find("ul").find("li").find("ul").find_all("li")
+    categorySoup = homepage_soup.find("ul", class_="nav nav-list").find("li").find("ul").find_all("li")
 
     category_urls = []
     for souptemp in categorySoup:
