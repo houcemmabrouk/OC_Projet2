@@ -4,31 +4,25 @@ import csv
 import time
 import os.path
 
-# Variables Initialization
-productCount = 0
+# Variables initialization
 urls = []
-productInfo = {"internal_id": None, "product_page_url": None, "universal_product_code": None,
+product_info = {"internal_id": None, "product_page_url": None, "universal_product_code": None,
                "title": None, "price_including_tax": None, "price_excluding_tax": None,
                "number_available": None, "product_description": None, "category": None,
                "review_rating": None, "image_url": None
                }
-
 all_product_info = {}
-
-
-
 
 # scraper returns data for specific soup givin a specifc HTML tag to a specific Sublevel
 def scraper(level, html_tag, soup):
-    for levelCounter in range(level):
+    for level_counter in range(level):
         soup = soup.findNext(html_tag)
     return soup.text
 
-
 # Store all category_url in category_urls []
 def generate_category_urls(homepage_url):
-    homepageResponse = requests.get(homepage_url)
-    homepage_soup = BeautifulSoup(homepageResponse.text, "html.parser")
+    homepage_response = requests.get(homepage_url)
+    homepage_soup = BeautifulSoup(homepage_response.text, "html.parser")
     categorySoup = homepage_soup.find("ul", class_="nav nav-list").find("li").find("ul").find_all("li")
 
     category_urls = []
@@ -38,30 +32,31 @@ def generate_category_urls(homepage_url):
         category_urls.append("http://books.toscrape.com/" + link)
     return category_urls
 category_urls = generate_category_urls("http://books.toscrape.com")
+print("category urls found and generated " + str(len(category_urls)))
 
-# allPagesOneCategory stores all books pages of a single category
-def allPagesOneCategory(categoryUrl):
+# generate_all_pages_of_one_category stores all books pages of a single category
+def generate_all_pages_of_one_category(category_url):
     pages = []
-    pages.append(categoryUrl)
-    pageNumber = 2
-    page = categoryUrl.replace("index", "page-2")
-    pageResponse = requests.get(page)
-    while pageResponse.ok:
+    pages.append(category_url)
+    page_number = 2
+    page = category_url.replace("index", "page-2")
+    page_response = requests.get(page)
+    while page_response.ok:
         page = page.replace("index", "page-2")
         pages.append(page)
-        pageNumber = int(page[len(page) - 6])
-        pageNumber += 1
-        page = page.replace("page-" + str(page[len(page) - 6]), "page-" + str(pageNumber))
-        pageResponse = requests.get(page)
+        page_number = int(page[len(page) - 6])
+        page_number += 1
+        page = page.replace("page-" + str(page[len(page) - 6]), "page-" + str(page_number))
+        page_response = requests.get(page)
     return pages
 
-# allUrlsOnePage stores all books urls of a single page
-def allUrlsOnePage(pageUrl):
+# generate_all_urls_of_one_page stores all books urls of a single page
+def generate_all_urls_of_one_page(page_url):
     urls =[]
-    pageResponse = requests.get(pageUrl)
-    if pageResponse.ok:
-        superSoup = BeautifulSoup(pageResponse.text, "html.parser")
-        h3 = superSoup.find_all("h3")
+    page_response = requests.get(page_url)
+    if page_response.ok:
+        super_soup = BeautifulSoup(page_response.text, "html.parser")
+        h3 = super_soup.find_all("h3")
         for article in h3:
             links = article.find("a")
             incomplete_url = links["href"]
@@ -69,122 +64,87 @@ def allUrlsOnePage(pageUrl):
             urls.append(temp_url)
     return urls
 
-# utf8Format translates string from latin-1 to utf-8
-def utf8Format(text):
+# utf8_format translates string from latin-1 to utf-8
+def utf8_format(text):
     return text.encode("latin-1").decode("utf-8")
 
+# generate_all_urls_of_one_page stores all books urls of a single page
 def generate_categorys_pages(categorys_list):
     categorys_pages = []
     for category_url in categorys_list:
-        categorys_pages.extend(allPagesOneCategory(category_url))
+        categorys_pages.extend(generate_all_pages_of_one_category(category_url))
     return categorys_pages
-
-
 all_category_pages = (generate_categorys_pages(category_urls))
 
-#print(all_category_pages)
-
-#print(len(all_category_pages))
-
-
+# generate_all_urls_of_one_page stores all books urls of a single page
 def generate_all_books_url(categorys_pages_list):
     books_url = []
     for page in categorys_pages_list:
-        books_url.extend(allUrlsOnePage(page))
+        books_url.extend(generate_all_urls_of_one_page(page))
     return books_url
-
 urls_store =[]
 urls_store = generate_all_books_url(all_category_pages)
-#print(urls_store)
-#print(len(urls_store))
 
-
-
-
-#laisser scrap_write pour le moment
-# probleme dictionnaire imbriques
-#scrap_write(urls_store)
-
-
-#write_csv(all_product_info)
-
-                   # Saving book picture in image folder
-
-                   #imageRequest = requests.get(image_url, allow_redirects=True)
-                   #imageFileName =  universal_product_code + ".jpg"
-                   #open(imageFileName, 'wb').write(imageRequest.content)
-
-                   #print("Book n° " + productInfo["internal_id"] + " " + productInfo["title"] + " completed")
-
-# marche impec
+# scrap : scrapes an url_list and stores data into all_product_info
 def scrap(url_list):
-    productCount = 0
     for url in url_list:
-        #print(url)
         response = requests.get(url)
-        productCount = productCount + 1
         if response.ok:
-            productInfo= {}
+            product_info= {}
             soup = BeautifulSoup(response.text, "html.parser")
-            # Add internal_id to productInfo
+
+            # Add internal_id to product_info
             internal_id = str(url_list.index(url))
-            productInfo.update({ "internal_id" : internal_id})
+            product_info.update({ "internal_id" : internal_id})
 
-
-            # Add product_page_url to productInfo
+            # Add product_page_url to product_info
             product_page_url = url
-            productInfo.update({"product_page_url" : url})
+            product_info.update({"product_page_url" : url})
 
-            # Add title to productInfo
-            title = utf8Format(scraper(0, "title", soup.find("h1")))
-            productInfo.update({"title": title})
+            # Add title to product_info
+            title = utf8_format(scraper(0, "title", soup.find("h1")))
+            product_info.update({"title": title})
 
-            # Add product_description to productInfo
-            product_description = utf8Format((scraper(1, "p", soup.find("h2"))))
-            productInfo.update({"product_description": product_description})
+            # Add product_description to product_info
+            product_description = utf8_format((scraper(1, "p", soup.find("h2"))))
+            product_info.update({"product_description": product_description})
 
-            # Add category to productInfo
-            category = utf8Format((scraper(3, "a", soup.find("ul"))))
-            productInfo.update({"category": category})
+            # Add category to product_info
+            category = utf8_format((scraper(3, "a", soup.find("ul"))))
+            product_info.update({"category": category})
 
-            # Add image_url to productInfo
+            # Add image_url to product_info
             incomplete_image_url = (soup.find("article").find("img")["src"])
             image_url = incomplete_image_url.replace("../..","http://books.toscrape.com")
-            productInfo.update({"image_url": image_url})
+            product_info.update({"image_url": image_url})
 
-            # Add universal_product_code to productInfo
+            # Add universal_product_code to product_info
             universal_product_code = (scraper(1, "td", soup.find("table").find("tr")))
-            productInfo.update({"universal_product_code": universal_product_code})
+            product_info.update({"universal_product_code": universal_product_code})
 
-            # Add price_excluding_tax to productInfo
-            price_excluding_tax = utf8Format((scraper(3, "td", soup.find("table").find("tr"))))
-            productInfo.update({"price_excluding_tax": price_excluding_tax})
+            # Add price_excluding_tax to product_info
+            price_excluding_tax = utf8_format((scraper(3, "td", soup.find("table").find("tr"))))
+            product_info.update({"price_excluding_tax": price_excluding_tax})
 
-            # Add price_including_tax to productInfo
-            price_including_tax = utf8Format((scraper(4, "td", soup.find("table").find("tr"))))
-            productInfo.update({"price_including_tax": price_including_tax})
+            # Add price_including_tax to product_info
+            price_including_tax = utf8_format((scraper(4, "td", soup.find("table").find("tr"))))
+            product_info.update({"price_including_tax": price_including_tax})
 
-            # Add number_available to productInfo
-            number_available = utf8Format((scraper(6, "td", soup.find("table").find("tr"))))
-            productInfo.update({"number_available": number_available})
+            # Add number_available to product_info
+            number_available = utf8_format((scraper(6, "td", soup.find("table").find("tr"))))
+            product_info.update({"number_available": number_available})
 
-            # Add review_rating to productInfo
-            review_rating = utf8Format((scraper(7, "td", soup.find("table").find("tr"))))
-            productInfo.update({"review_rating": review_rating})
+            # Add review_rating to product_info
+            review_rating = utf8_format((scraper(7, "td", soup.find("table").find("tr"))))
+            product_info.update({"review_rating": review_rating})
 
             # Store product_info item in all_product_info
-            all_product_info[internal_id] = productInfo
-
+            all_product_info[internal_id] = product_info
+            print("Book n° " + product_info["internal_id"] + " " + product_info["title"] + " scrapping completed")
     return all_product_info
 
-urls_store =[]
-urls_store = generate_all_books_url(all_category_pages)
-all_product_info = scrap(urls_store)
 
-
-
-
-
+# write book info from all_product_info into scrap.csv
 def write_csv(all_product_info_dict):
     with open("scrap.csv", "w") as csvfile:
         fieldnames = ["internal_id", "product_page_url", "title", "product_description", "category", "image_url",
@@ -207,9 +167,7 @@ def write_csv(all_product_info_dict):
                              "review_rating": all_product_info[index]["review_rating"]
                             })
     csvfile.close()
-
-print("writing process started")
-write_csv(all_product_info)
+    print("all data saved in scrap.csv file")
 
 # Saving book picture in image folder
 def save_pictures(all_product_info_dict):
@@ -227,7 +185,8 @@ def save_pictures(all_product_info_dict):
         imageRequest = requests.get(image_url, allow_redirects=True)
         imageFileName = path + "/" + universal_product_code + ".jpg"
         open(imageFileName, 'wb').write(imageRequest.content)
-        print("Book n° " + all_product_info[index]["internal_id"] + " " + all_product_info[index]["title"] + " completed")
+        print("Book n° " + all_product_info[index]["internal_id"] + " " + all_product_info[index]["title"] + " picture saved")
 
-#write_csv(all_product_info)
+all_product_info = scrap(urls_store)
+write_csv(all_product_info)
 save_pictures(all_product_info)
