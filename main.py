@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import os.path
+import time
 
 if __name__ == "__main__":
     # Variables initialization
@@ -139,15 +140,28 @@ if __name__ == "__main__":
                 print("Book n° " + product_info["internal_id"] + " " + product_info["title"] + " scrapping completed")
         return all_product_info
 
+    # clean_csv removes all csv files in working directory
+    def clean_csv():
+        directory = os.getcwd()
+        csv_library = os.listdir(directory)
+        for item in csv_library:
+            if item.endswith(".csv"):
+                os.remove(os.path.join(directory, item))
+
     # write book info from all_product_info into scrap.csv
     def write_csv(all_product_info_dict):
-        with open("scrap.csv", "w") as csvfile:
-            fieldnames = ["internal_id", "product_page_url", "title", "product_description", "category", "image_url",
-                          "universal_product_code", "price_excluding_tax", "price_including_tax",
-                          "number_available", "review_rating"]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for index in all_product_info:
+        for index in all_product_info:
+            filename = all_product_info[index]["category"] + ".csv"
+            file_exists = os.path.isfile(filename)
+            with open(filename, "a") as csvfile:
+                fieldnames = ["internal_id", "product_page_url", "title", "product_description", "category",
+                              "image_url",
+                              "universal_product_code", "price_excluding_tax", "price_including_tax",
+                              "number_available", "review_rating"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                if file_exists is False:
+                    writer.writeheader()
+
                 # CSV data writing
                 writer.writerow({"internal_id": all_product_info[index]["internal_id"],
                                  "title": all_product_info[index]["title"],
@@ -161,7 +175,7 @@ if __name__ == "__main__":
                                  "number_available": all_product_info[index]["number_available"],
                                  "review_rating": all_product_info[index]["review_rating"]
                                  })
-        csvfile.close()
+
 
     # Saving book picture in image folder
     def save_pictures(all_product_info_dict):
@@ -183,13 +197,15 @@ if __name__ == "__main__":
                 "title"] + " picture saved")
 
     category_urls = generate_category_urls("http://books.toscrape.com")
-    print("category urls found and generated " + str(len(category_urls)))
+    print(str(len(category_urls) +" category urls found and generated"))
     all_category_pages = (generate_categorys_pages(category_urls))
-    print("all category pages found and generated " + str(len(all_category_pages)))
+    print(str(len(all_category_pages) + " all category pages found and generated "))
     urls_store = generate_all_books_url(all_category_pages)
-    print("all books pages found and generated " + str(len(urls_store)))
+    print(str(len(urls_store) + "all books pages found and generated"))
     all_product_info = scrap(urls_store)
     print("all books pages scrapped")
+    clean_csv()
+    print("csv library cleaned")
     write_csv(all_product_info)
     print("all books information saved in scrap.csv")
     save_pictures(all_product_info)
