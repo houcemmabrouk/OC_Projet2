@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import os.path
-import time
 
 if __name__ == "__main__":
     # Variables initialization
@@ -197,11 +196,11 @@ if __name__ == "__main__":
                 "title"] + " picture saved")
 
     category_urls = generate_category_urls("http://books.toscrape.com")
-    print(str(len(category_urls) +" category urls found and generated"))
+    print(str(len(category_urls)) + " category urls found and generated")
     all_category_pages = (generate_categorys_pages(category_urls))
-    print(str(len(all_category_pages) + " all category pages found and generated "))
+    print(str(len(all_category_pages)) + " category pages found and generated ")
     urls_store = generate_all_books_url(all_category_pages)
-    print(str(len(urls_store) + "all books pages found and generated"))
+    print(str(len(urls_store)) + " books pages found and generated")
     all_product_info = scrap(urls_store)
     print("all books pages scrapped")
     clean_csv()
